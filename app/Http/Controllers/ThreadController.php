@@ -34,7 +34,7 @@ class ThreadController extends Controller
         ]);
 
         // Verify proof of work
-        $data = $validated['subject'] . $validated['content'];
+        $data = $validated['subject'] . '||' . $validated['content'];
         if (!\App\Models\ProofOfWork::verifyHash($data, $validated['pow_nonce'], $validated['pow_difficulty'])) {
             return back()->with('error', 'Invalid proof of work');
         }

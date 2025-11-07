@@ -217,8 +217,8 @@
                     const messageField = form.querySelector('[name="message"]');
                     
                     if (subjectField && contentField) {
-                        // For threads: subject + content
-                        data = subjectField.value + contentField.value;
+                        // For threads: subject + delimiter + content
+                        data = subjectField.value + '||' + contentField.value;
                     } else if (contentField) {
                         // For posts: content only
                         data = contentField.value;

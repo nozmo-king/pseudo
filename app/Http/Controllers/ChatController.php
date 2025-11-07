@@ -50,6 +50,19 @@ class ChatController extends Controller
             'points' => \App\Models\ProofOfWork::getPointsForDifficulty($validated['pow_difficulty']),
         ]);
 
+        // Store proof of work
+        \App\Models\ProofOfWork::create([
+            'user_id' => auth()->id(),
+            'session_id' => session()->getId(),
+            'puzzle_difficulty' => $validated['pow_difficulty'],
+            'hash' => hash('sha256', $validated['message'] . $validated['pow_nonce']),
+            'nonce' => $validated['pow_nonce'],
+            'points' => $message->points,
+            'ip_address' => $request->ip(),
+            'powable_id' => $message->id,
+            'powable_type' => ChatMessage::class,
+        ]);
+
         return response()->json(['success' => true, 'message' => $message]);
     }
 }

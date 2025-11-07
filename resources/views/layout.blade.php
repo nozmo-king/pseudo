@@ -209,8 +209,23 @@
                     e.preventDefault();
                     
                     const difficulty = form.dataset.powDifficulty || '21e8';
-                    const dataField = form.querySelector('[name="content"]') || form.querySelector('[name="subject"]');
-                    const data = dataField.value;
+                    
+                    // Build data string based on form fields
+                    let data = '';
+                    const subjectField = form.querySelector('[name="subject"]');
+                    const contentField = form.querySelector('[name="content"]');
+                    const messageField = form.querySelector('[name="message"]');
+                    
+                    if (subjectField && contentField) {
+                        // For threads: subject + content
+                        data = subjectField.value + contentField.value;
+                    } else if (contentField) {
+                        // For posts: content only
+                        data = contentField.value;
+                    } else if (messageField) {
+                        // For chat: message only
+                        data = messageField.value;
+                    }
                     
                     if (!data) {
                         alert('Please enter content first');

@@ -56,13 +56,12 @@ function checkAuth() {
     fetch('/api/pow/challenge', { credentials: 'include' })
         .then(response => {
             if (response.ok) {
-                document.getElementById('main-content').style.display = 'block';
-                loadBoards();
+                document.getElementById('updates-box').style.display = 'block';
             } else {
-                document.getElementById('login-screen').style.display = 'block';
+                document.getElementById('updates-box').style.display = 'block';
             }
         })
         .catch(() => {
-            document.getElementById('login-screen').style.display = 'block';
+            document.getElementById('updates-box').style.display = 'block';
         });
 }

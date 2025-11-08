@@ -26,9 +26,22 @@ function goHome() {
     }
 }
 
-function showBoards() {
+async function showBoards() {
     hideAllViews();
-    loadBoards();
+    const response = await fetch('/api/boards');
+    const boards = await response.json();
+
+    const selector = document.getElementById('board-selector');
+    selector.innerHTML = `
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>boards</h3>
+            ${boards.map(b => `
+                <a onclick="selectBoard('${b.slug}')" style="margin-right: 15px; cursor: pointer;">/${b.slug}/ - ${b.name}</a>
+            `).join(' ')}
+        </div>
+    `;
+
+    document.getElementById('updates-box').style.display = 'none';
 }
 
 function showChat() {
@@ -66,28 +79,39 @@ async function loadBoards() {
 
     const selector = document.getElementById('board-selector');
     selector.innerHTML = `
-        <div class="card">
+        <div class="card" style="margin-bottom: 20px;">
             <h3>boards</h3>
             ${boards.map(b => `
-                <button class="btn" onclick="selectBoard('${b.slug}')">${b.name}</button>
+                <a onclick="selectBoard('${b.slug}')" style="margin-right: 15px; cursor: pointer;">/${b.slug}/ - ${b.name}</a>
             `).join(' ')}
         </div>
     `;
 
-    if (boards.length > 0) {
-        selectBoard(boards[0].slug);
-    }
+    document.getElementById('updates-box').style.display = 'none';
 }
 
 async function selectBoard(slug) {
     currentBoard = slug;
     hideAllViews();
+    document.getElementById('updates-box').style.display = 'none';
 
     const boardResponse = await fetch(`/api/boards/${slug}`);
     const board = await boardResponse.json();
 
     const threadsResponse = await fetch(`/api/threads?board=${slug}`);
     const threads = await threadsResponse.json();
+
+    const selector = document.getElementById('board-selector');
+    const response = await fetch('/api/boards');
+    const boards = await response.json();
+    selector.innerHTML = `
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>boards</h3>
+            ${boards.map(b => `
+                <a onclick="selectBoard('${b.slug}')" style="margin-right: 15px; cursor: pointer;">/${b.slug}/ - ${b.name}</a>
+            `).join(' ')}
+        </div>
+    `;
 
     const listEl = document.getElementById('thread-list');
     listEl.innerHTML = `

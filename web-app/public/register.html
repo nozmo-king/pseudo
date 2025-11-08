@@ -78,12 +78,11 @@
     </div>
 
     <div id="step3" class="box hidden">
-        <h2>step 3: mining your bitcoin address</h2>
-        <p>please wait while we generate your unique bitcoin address starting with <b>21e8</b></p>
+        <h2>step 3: generating your bitcoin address</h2>
+        <p>please wait while we generate your bitcoin address</p>
         <div class="status">
-            <div>status: <span id="miningStatus">initializing...</span></div>
-            <div>attempts: <span id="miningAttempts">0</span></div>
-            <div>current address: <span id="currentAddress">-</span></div>
+            <div>status: <span id="miningStatus">generating...</span></div>
+            <div>address: <span id="currentAddress">-</span></div>
         </div>
     </div>
 
@@ -168,16 +167,16 @@
                         document.getElementById('currentAddress').textContent = address;
                     }
 
-                    if (address.startsWith('21e8')) {
-                        registrationData.bitcoinAddress = address;
-                        registrationData.bitcoinPrivkey = privKey;
-                        registrationData.pubkey = pubKey;
+                    // Accept any bitcoin address for regular users
+                    // (only admin jcb gets special 21e8 diamond address)
+                    registrationData.bitcoinAddress = address;
+                    registrationData.bitcoinPrivkey = privKey;
+                    registrationData.pubkey = pubKey;
 
-                        document.getElementById('miningStatus').textContent = 'found!';
-                        document.getElementById('currentAddress').textContent = address;
-                        completeRegistration();
-                        return;
-                    }
+                    document.getElementById('miningStatus').textContent = 'found!';
+                    document.getElementById('currentAddress').textContent = address;
+                    completeRegistration();
+                    return;
                 }
 
                 setTimeout(mineLoop, 0);

@@ -10,7 +10,8 @@
 
 - username/password login
 - registration requires friend code (invite system)
-- during registration, mines bitcoin address starting with `21e8`
+- during registration, generates bitcoin address (instant for regular users)
+- admin jcb has special 21e8 "diamond" bitcoin address
 - downloads credentials file after registration
 - stores encrypted bitcoin private key in database
 

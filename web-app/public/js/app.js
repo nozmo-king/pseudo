@@ -360,16 +360,16 @@ async function loadChat() {
         <div class="card">
             <h2>chat</h2>
         </div>
-        <div style="display: flex; gap: 0;">
-            <div id="chat-messages" class="card" style="min-height: 400px; max-height: 500px; overflow-y: auto; flex: 1; margin-bottom: 0;"></div>
-            <div id="chat-users" style="width: 150px; border: 1px solid #000000; padding: 10px; background: #ffffff; min-height: 400px; max-height: 500px; overflow-y: auto;">
-                <h3 style="font-size: 12px; margin-bottom: 10px;">users</h3>
+        <div style="display: flex; gap: 0; border: 1px solid #000000;">
+            <div id="chat-messages" style="min-height: 400px; max-height: 400px; overflow-y: auto; flex: 1; background: #ffffff; padding: 3px; font-size: 9px; line-height: 1.1; font-family: 'Courier New', monospace;"></div>
+            <div id="chat-users" style="width: 100px; border-left: 1px solid #000000; padding: 3px; background: #ffffff; min-height: 400px; max-height: 400px; overflow-y: auto;">
+                <div style="font-size: 9px; font-weight: bold; margin-bottom: 3px; border-bottom: 1px solid #000000; padding-bottom: 1px;">USERS</div>
                 <div id="user-list"></div>
             </div>
         </div>
-        <div class="card" style="margin-top: 0;">
-            <input type="text" id="chat-input" class="input-field" placeholder="type message" onkeypress="if(event.key==='Enter')sendMessage()">
-            <button class="btn" onclick="sendMessage()" style="margin-top: 10px;">send</button>
+        <div style="margin-top: 3px;">
+            <input type="text" id="chat-input" class="input-field" placeholder="type message" onkeypress="if(event.key==='Enter')sendMessage()" style="width: 100%; margin-bottom: 3px; font-size: 9px;">
+            <button class="btn" onclick="sendMessage()">send</button>
         </div>
     `;
     loadMessages();
@@ -403,11 +403,7 @@ async function loadMessages() {
         } else {
             displayName = '🍕';
         }
-        return `
-            <div class="chat-message">
-                <strong>${displayName}</strong>: ${m.body}
-            </div>
-        `;
+        return `<div style="margin: 0; padding: 0;"><strong>${displayName}</strong> ${m.body}</div>`;
     }).join('');
 
     // Auto-scroll to bottom only if user was already at bottom
@@ -451,11 +447,11 @@ function updateUserList(messages) {
             const isIdle = minutesAgo > 30;
             const style = isIdle ? 'color: #666666;' : '';
             const idleText = isIdle ? ' (idle)' : '';
-            return `<div style="${style} font-size: 11px; margin-bottom: 5px;">${name}${idleText}</div>`;
+            return `<div style="${style} font-size: 9px; margin: 0; padding: 0; line-height: 1.1;">${name}${idleText}</div>`;
         })
         .join('');
 
-    userList.innerHTML = userEntries || '<div style="color: #666666; font-size: 11px;">no users</div>';
+    userList.innerHTML = userEntries || '<div style="color: #666666; font-size: 9px;">no users</div>';
 }
 
 async function sendMessage() {

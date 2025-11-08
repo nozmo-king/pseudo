@@ -67,6 +67,8 @@ users table includes:
 - [x] deploy to production
 - [x] strip CSS to black and white only (no opacity, gradients, or rgba)
 - [x] add 1px borders to headers and links
+- [x] install and configure PHP-FPM for production
+- [x] fix chat for anonymous users
 - [ ] test full registration flow
 - [ ] create first admin user
 

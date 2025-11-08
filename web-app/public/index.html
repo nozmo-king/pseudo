@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>pseudochan</title>
+    <title>haichan</title>
     <link rel="stylesheet" href="/assets/pseudochan.css">
     <script src="https://cdn.jsdelivr.net/npm/elliptic@6.5.4/dist/elliptic.min.js"></script>
 </head>
 <body>
     <div class="top-toolbar">
-        <h1 onclick="goHome()" style="cursor: pointer; margin: 0;">pseudochan</h1>
+        <h1 onclick="goHome()" style="cursor: pointer; margin: 0;">haichan</h1>
         <div class="toolbar-links">
             <a onclick="showBoards()">boards</a>
             <a onclick="showChat()">chat</a>
@@ -20,11 +20,11 @@
     </div>
 
     <div class="container">
-        <div id="login-screen" style="display: none;">
-            <div class="card">
-                <h2>authenticate</h2>
-                <button class="btn" onclick="login()">sign with secp256k1</button>
-            </div>
+        <div id="updates-box" class="card">
+            <h2>site updates</h2>
+            <p><b>nov 8 2025</b> - haichan is now live with username/password registration</p>
+            <p><b>nov 8 2025</b> - bitcoin address mining (21e8 prefix) implemented</p>
+            <p><b>nov 8 2025</b> - new 90s aesthetic applied</p>
         </div>
 
         <div id="main-content" style="display: none;">

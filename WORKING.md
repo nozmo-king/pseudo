@@ -50,7 +50,9 @@ users table includes:
 - [x] landing page
 - [x] registration with bitcoin mining
 - [x] username/password auth
-- [ ] deploy to production
+- [x] deploy to production
+- [x] strip CSS to black and white only (no opacity, gradients, or rgba)
+- [x] add 1px borders to headers and links
 - [ ] test full registration flow
 - [ ] create first admin user
 
@@ -61,3 +63,7 @@ users table includes:
 - all fonts must be serif (times new roman)
 - no gradients, shadows, or fancy css
 - day mode only (no dark theme)
+- only black (#000000) and white (#ffffff) colors allowed
+- no opacity or rgba
+- 1px borders on headers and links
+- no border-radius, transitions, or animations

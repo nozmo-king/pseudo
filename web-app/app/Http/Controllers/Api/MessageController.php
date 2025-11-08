@@ -49,12 +49,15 @@ class MessageController extends Controller
         }
 
         $userId = auth()->id();
+        $anonName = null;
 
-        // Generate random food emoji name for anonymous users
+        // Generate random food emoji name for anonymous users using cookie
         if (!$userId) {
-            if (!session()->has('anon_name')) {
-                $foodEmojis = ['🍕', '🍔', '🍟', '🌭', '🍿', '🧂', '🥓', '🥚', '🍳', '🧇', '🥞', '🧈', '🍞', '🥐', '🥨', '🥯', '🥖', '🫓', '🥪', '🌮', '🌯', '🫔', '🥙', '🧆', '🥚', '🍖', '🍗', '🥩', '🍠', '🥟', '🥠', '🥡', '🍱', '🍘', '🍙', '🍚', '🍛', '🍜', '🍝', '🍢', '🍣', '🍤', '🍥', '🥮', '🍡', '🥘', '🍲', '🫕', '🍵', '🥣', '🥗', '🍿', '🧈', '🧇', '🥞', '🧆', '🫓', '🥙', '🌮', '🌯', '🫔', '🥪', '🥨', '🥯', '🥖', '🍞', '🥐', '🧀', '🥚', '🍳', '🧈', '🥞', '🧇', '🥓', '🍔', '🍟', '🌭', '🍕', '🥪'];
-                session(['anon_name' => $foodEmojis[array_rand($foodEmojis)]]);
+            $anonName = $request->cookie('anon_name');
+
+            if (!$anonName) {
+                $foodEmojis = ['🍕', '🍔', '🍟', '🌭', '🍿', '🧂', '🥓', '🥚', '🍳', '🧇', '🥞', '🧈', '🍞', '🥐', '🥨', '🥯', '🥖', '🫓', '🥪', '🌮', '🌯', '🫔', '🥙', '🧆', '🍖', '🍗', '🥩', '🍠', '🥟', '🥠', '🥡', '🍱', '🍘', '🍙', '🍚', '🍛', '🍜', '🍝', '🍢', '🍣', '🍤', '🍥', '🥮', '🍡', '🥘', '🍲', '🫕', '🍵', '🥣', '🥗', '🧀'];
+                $anonName = $foodEmojis[array_rand($foodEmojis)];
             }
         }
 
@@ -62,11 +65,62 @@ class MessageController extends Controller
             'user_id' => $userId,
             'chatroom_id' => $request->input('chatroom_id'),
             'body' => $body,
-            'anonymous_name' => !$userId ? session('anon_name') : null,
+            'anonymous_name' => $anonName,
         ]);
 
         $message->load('user');
 
-        return response()->json($message, 201);
+        // Check if we should trigger talky bot response
+        $this->maybeRespondWithTalky($request->input('chatroom_id'));
+
+        $response = response()->json($message, 201);
+
+        // Set cookie for anonymous users
+        if (!$userId && $anonName) {
+            $response->cookie('anon_name', $anonName, 60 * 24 * 365); // 1 year
+        }
+
+        return $response;
+    }
+
+    private function maybeRespondWithTalky($chatroomId)
+    {
+        // Get recent messages (last 5 minutes)
+        $recentMessages = Message::where('chatroom_id', $chatroomId)
+            ->where('created_at', '>', now()->subMinutes(5))
+            ->where('anonymous_name', '!=', 'talky')
+            ->whereNull('user_id')
+            ->orWhere(function($q) use ($chatroomId) {
+                $q->where('chatroom_id', $chatroomId)
+                  ->where('created_at', '>', now()->subMinutes(5))
+                  ->whereNotNull('user_id');
+            })
+            ->count();
+
+        // Only respond if chat has been quiet (less than 3 messages in last 5 mins)
+        if ($recentMessages <= 2) {
+            $responses = [
+                "hey there! pretty quiet in here",
+                "anyone around?",
+                "what's everyone up to?",
+                "slow day huh",
+                "just checking in",
+                "how's it going?",
+                "quiet night",
+                "anyone want to chat?",
+                "hello hello",
+                "hmm pretty dead in here",
+            ];
+
+            // Random delay between 10-30 seconds
+            sleep(rand(10, 30));
+
+            Message::create([
+                'user_id' => null,
+                'chatroom_id' => $chatroomId,
+                'body' => $responses[array_rand($responses)],
+                'anonymous_name' => 'talky',
+            ]);
+        }
     }
 }

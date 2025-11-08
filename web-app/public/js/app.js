@@ -360,8 +360,14 @@ async function loadChat() {
         <div class="card">
             <h2>chat</h2>
         </div>
-        <div id="chat-messages" class="card" style="min-height: 400px; max-height: 500px; overflow-y: auto;"></div>
-        <div class="card">
+        <div style="display: flex; gap: 0;">
+            <div id="chat-messages" class="card" style="min-height: 400px; max-height: 500px; overflow-y: auto; flex: 1; margin-bottom: 0;"></div>
+            <div id="chat-users" style="width: 150px; border: 1px solid #000000; padding: 10px; background: #ffffff; min-height: 400px; max-height: 500px; overflow-y: auto;">
+                <h3 style="font-size: 12px; margin-bottom: 10px;">users</h3>
+                <div id="user-list"></div>
+            </div>
+        </div>
+        <div class="card" style="margin-top: 0;">
             <input type="text" id="chat-input" class="input-field" placeholder="type message" onkeypress="if(event.key==='Enter')sendMessage()">
             <button class="btn" onclick="sendMessage()" style="margin-top: 10px;">send</button>
         </div>
@@ -384,6 +390,10 @@ async function loadMessages() {
     const messages = await response.json();
 
     const container = document.getElementById('chat-messages');
+    const prevScrollTop = container.scrollTop;
+    const prevScrollHeight = container.scrollHeight;
+    const wasAtBottom = prevScrollHeight - prevScrollTop - container.clientHeight < 50;
+
     container.innerHTML = messages.map(m => {
         let displayName;
         if (m.anonymous_name) {
@@ -400,8 +410,52 @@ async function loadMessages() {
         `;
     }).join('');
 
-    // Auto-scroll to bottom
-    container.scrollTop = container.scrollHeight;
+    // Auto-scroll to bottom only if user was already at bottom
+    if (wasAtBottom || prevScrollHeight === 0) {
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Update user list
+    updateUserList(messages);
+}
+
+function updateUserList(messages) {
+    const userList = document.getElementById('user-list');
+    if (!userList) return;
+
+    const now = new Date();
+    const userActivity = {};
+
+    // Track last activity for each user
+    messages.forEach(m => {
+        let displayName;
+        if (m.anonymous_name) {
+            displayName = m.anonymous_name;
+        } else if (m.user) {
+            displayName = m.user.display_name || m.user.pubkey.substring(0, 8);
+        } else {
+            displayName = '🍕';
+        }
+
+        const messageTime = new Date(m.created_at);
+        if (!userActivity[displayName] || messageTime > userActivity[displayName]) {
+            userActivity[displayName] = messageTime;
+        }
+    });
+
+    // Generate user list with idle status
+    const userEntries = Object.entries(userActivity)
+        .sort((a, b) => b[1] - a[1]) // Sort by most recent activity
+        .map(([name, lastActivity]) => {
+            const minutesAgo = (now - lastActivity) / 1000 / 60;
+            const isIdle = minutesAgo > 30;
+            const style = isIdle ? 'color: #666666;' : '';
+            const idleText = isIdle ? ' (idle)' : '';
+            return `<div style="${style} font-size: 11px; margin-bottom: 5px;">${name}${idleText}</div>`;
+        })
+        .join('');
+
+    userList.innerHTML = userEntries || '<div style="color: #666666; font-size: 11px;">no users</div>';
 }
 
 async function sendMessage() {

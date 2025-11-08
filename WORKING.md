@@ -20,7 +20,13 @@
 - `/register.html` - registration with friend code, bitcoin mining
 - `/login.html` - username/password login
 - `/welcome.html` - post-registration welcome
-- `/` (index.html) - main haichan app (authenticated)
+- `/` (index.html) - main haichan app with updates box
+
+## boards
+
+- `/gen/` - general discussion
+- `/tech/` - technology discussion
+- `/film/` - film and media discussion
 
 ## database schema
 

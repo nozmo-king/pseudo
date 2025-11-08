@@ -69,8 +69,19 @@ users table includes:
 - [x] add 1px borders to headers and links
 - [x] install and configure PHP-FPM for production
 - [x] fix chat for anonymous users
+- [x] add talky chatbot to chat
+- [x] create first admin user (jcb)
 - [ ] test full registration flow
-- [ ] create first admin user
+
+## admin credentials
+
+- username: jcb
+- password: @!Qtrin0pz (bcrypt hashed with automatic salt)
+- is_admin: true
+
+## invite codes
+
+- haichan2025 (100 max uses, created by jcb)
 
 ## notes
 

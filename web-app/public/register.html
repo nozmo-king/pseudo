@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>register - haichan</title>
-    <script src="https://cdn.jsdelivr.net/npm/elliptic@6.5.4/dist/elliptic.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         body {
@@ -104,6 +104,10 @@
         let ec;
 
         window.addEventListener('load', function() {
+            if (typeof elliptic === 'undefined') {
+                alert('Error: Cryptography libraries failed to load. Please refresh the page.');
+                return;
+            }
             const EC = elliptic.ec;
             ec = new EC('secp256k1');
         });
@@ -124,6 +128,11 @@
         }
 
         async function startMining() {
+            if (!ec) {
+                alert('Please wait for libraries to load, then try again.');
+                return;
+            }
+
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const sshKey = document.getElementById('ssh Key').value.trim();

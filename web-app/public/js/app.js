@@ -127,6 +127,16 @@ function showNewThread() {
             <form onsubmit="createThread(event)">
                 <input type="text" id="thread-title" class="input-field" placeholder="title" required style="margin-bottom: 10px;">
                 <textarea id="thread-body" class="input-field" placeholder="body" required style="min-height: 100px; margin-bottom: 10px;"></textarea>
+
+                <div style="margin: 20px 0;">
+                    <h3 style="font-size: 16px; margin-bottom: 10px;">doodle to mine</h3>
+                    <canvas id="doodle-canvas" width="600" height="400" style="border: 1px solid var(--border-color); cursor: crosshair; background: var(--bg-secondary);"></canvas>
+                    <div style="margin-top: 10px;">
+                        <button type="button" class="btn" onclick="clearDoodle()">clear</button>
+                        <span style="margin-left: 10px; font-size: 14px; color: var(--text-secondary);">draw to mine better hashes</span>
+                    </div>
+                </div>
+
                 <div id="thread-pow-status" class="pow-indicator">mining... 0 POW</div>
                 <button type="submit" class="btn" style="margin-top: 10px;">post</button>
                 <button type="button" class="btn" onclick="selectBoard('${currentBoard}')">cancel</button>
@@ -138,6 +148,8 @@ function showNewThread() {
     powMiner.startMouseoverMining(textarea, (hash, nonce, points) => {
         document.getElementById('thread-pow-status').textContent = `${points} POW (${hash.substring(0, 16)}...)`;
     });
+
+    initDoodleMining();
 }
 
 async function createThread(event) {
@@ -557,6 +569,68 @@ async function uploadImage(event) {
         loadImages();
     } else {
         alert('upload failed');
+    }
+}
+
+let doodleCanvas = null;
+let doodleCtx = null;
+let doodleDrawing = false;
+let doodleMiner = null;
+
+function initDoodleMining() {
+    doodleCanvas = document.getElementById('doodle-canvas');
+    if (!doodleCanvas) return;
+
+    doodleCtx = doodleCanvas.getContext('2d');
+    doodleCtx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-primary');
+    doodleCtx.lineWidth = 2;
+    doodleCtx.lineCap = 'round';
+
+    doodleMiner = new ProofOfWorkMiner();
+    doodleMiner.getChallenge();
+
+    doodleCanvas.addEventListener('mousedown', startDoodle);
+    doodleCanvas.addEventListener('mousemove', doodle);
+    doodleCanvas.addEventListener('mouseup', stopDoodle);
+    doodleCanvas.addEventListener('mouseleave', stopDoodle);
+}
+
+function startDoodle(e) {
+    doodleDrawing = true;
+    const rect = doodleCanvas.getBoundingClientRect();
+    doodleCtx.beginPath();
+    doodleCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+
+    if (doodleMiner && !doodleMiner.mining) {
+        doodleMiner.mine(999999999, (hash, nonce, points) => {
+            const statusEl = document.getElementById('thread-pow-status');
+            if (statusEl) {
+                statusEl.textContent = `${points} POW (${hash.substring(0, 16)}...) via doodle`;
+            }
+            window.updateMiningStats(points, doodleMiner.attempts);
+        });
+    }
+}
+
+function doodle(e) {
+    if (!doodleDrawing) return;
+
+    const rect = doodleCanvas.getBoundingClientRect();
+    doodleCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    doodleCtx.stroke();
+
+    if (doodleMiner && Math.random() < 0.1) {
+        doodleMiner.attempts += 100;
+    }
+}
+
+function stopDoodle() {
+    doodleDrawing = false;
+}
+
+function clearDoodle() {
+    if (doodleCtx && doodleCanvas) {
+        doodleCtx.clearRect(0, 0, doodleCanvas.width, doodleCanvas.height);
     }
 }
 

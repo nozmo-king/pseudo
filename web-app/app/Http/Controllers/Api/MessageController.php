@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RespondWithTalky;
 use App\Models\Message;
 use App\Services\ChatCommandService;
 use Illuminate\Http\Request;
@@ -70,7 +71,7 @@ class MessageController extends Controller
 
         $message->load('user');
 
-        // Check if we should trigger talky bot response
+        // Check if we should trigger talky bot response (async)
         $this->maybeRespondWithTalky($request->input('chatroom_id'));
 
         $response = response()->json($message, 201);
@@ -99,28 +100,8 @@ class MessageController extends Controller
 
         // Only respond if chat has been quiet (less than 3 messages in last 5 mins)
         if ($recentMessages <= 2) {
-            $responses = [
-                "hey there! pretty quiet in here",
-                "anyone around?",
-                "what's everyone up to?",
-                "slow day huh",
-                "just checking in",
-                "how's it going?",
-                "quiet night",
-                "anyone want to chat?",
-                "hello hello",
-                "hmm pretty dead in here",
-            ];
-
-            // Random delay between 10-30 seconds
-            sleep(rand(10, 30));
-
-            Message::create([
-                'user_id' => null,
-                'chatroom_id' => $chatroomId,
-                'body' => $responses[array_rand($responses)],
-                'anonymous_name' => 'talky',
-            ]);
+            // Dispatch job to respond after delay (non-blocking)
+            RespondWithTalky::dispatch($chatroomId);
         }
     }
 }

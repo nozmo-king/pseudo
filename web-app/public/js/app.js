@@ -14,6 +14,8 @@ function hideAllViews() {
     document.getElementById('thread-view').style.display = 'none';
     document.getElementById('profile-view').style.display = 'none';
     document.getElementById('chat-view').style.display = 'none';
+    document.getElementById('mining-view').style.display = 'none';
+    document.getElementById('images-view').style.display = 'none';
 }
 
 function goHome() {
@@ -46,6 +48,18 @@ function showOwnProfile() {
     }
 }
 
+function showMining() {
+    hideAllViews();
+    document.getElementById('mining-view').style.display = 'block';
+    loadMiningPage();
+}
+
+function showImages() {
+    hideAllViews();
+    document.getElementById('images-view').style.display = 'block';
+    loadImages();
+}
+
 async function loadBoards() {
     const response = await fetch('/api/boards');
     const boards = await response.json();
@@ -67,25 +81,41 @@ async function loadBoards() {
 
 async function selectBoard(slug) {
     currentBoard = slug;
-    const response = await fetch(`/api/threads?board=${slug}`);
-    const threads = await response.json();
+    hideAllViews();
+
+    const boardResponse = await fetch(`/api/boards/${slug}`);
+    const board = await boardResponse.json();
+
+    const threadsResponse = await fetch(`/api/threads?board=${slug}`);
+    const threads = await threadsResponse.json();
 
     const listEl = document.getElementById('thread-list');
     listEl.innerHTML = `
         <div class="card">
-            <h2>/${currentBoard}/</h2>
+            <h2>/${currentBoard}/ - ${board.name}</h2>
+            <p>${board.description}</p>
             <button class="btn" onclick="showNewThread()">new thread</button>
         </div>
-        ${threads.map(t => `
-            <div class="thread-card" onclick="loadThread(${t.id})">
-                <h3>${t.title}</h3>
-                <div class="pow-indicator">${t.total_pow || 0} POW</div>
-                <small>by ${t.user.display_name || t.user.pubkey.substring(0, 8)}</small>
-            </div>
-        `).join('')}
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 20px;">
+            ${threads.map(t => `
+                <div class="thread-card" onclick="loadThread(${t.id})" style="cursor: pointer;">
+                    <h3 style="margin: 0 0 10px 0;">${t.title}</h3>
+                    <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 10px;">
+                        ${(t.body || '').substring(0, 150)}${(t.body || '').length > 150 ? '...' : ''}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <small>by ${t.user.display_name || t.user.pubkey.substring(0, 8)}</small>
+                        <div class="pow-indicator">${t.total_pow || 0} POW</div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 5px;">
+                        ${t.reply_count || 0} replies
+                    </div>
+                </div>
+            `).join('')}
+        </div>
     `;
 
-    document.getElementById('thread-view').style.display = 'none';
     document.getElementById('thread-list').style.display = 'block';
 }
 
@@ -346,6 +376,188 @@ async function loadLeaderboard() {
             </div>
         `).join('')}
     `;
+}
+
+let continuousMiner = null;
+
+async function loadMiningPage() {
+    const miningView = document.getElementById('mining-view');
+    miningView.innerHTML = `
+        <div class="card">
+            <h2>continuous mining</h2>
+            <p>mine proof-of-work hashes continuously. better hashes increase your rank.</p>
+        </div>
+
+        <div class="card">
+            <div id="mining-display">
+                <div class="pow-indicator" style="font-size: 24px; margin: 20px 0;">
+                    <div id="current-hash">waiting to start...</div>
+                    <div id="current-points" style="margin-top: 10px;">0 POW</div>
+                </div>
+                <div style="margin: 20px 0;">
+                    <div>attempts: <span id="mining-attempts">0</span></div>
+                    <div>best this session: <span id="session-best">0</span></div>
+                    <div>total mined: <span id="total-mined">0</span></div>
+                </div>
+            </div>
+
+            <button id="mining-toggle" class="btn" onclick="toggleContinuousMining()">start mining</button>
+            <button class="btn" onclick="submitMinedHash()" id="submit-hash" disabled>submit hash</button>
+        </div>
+    `;
+
+    if (continuousMiner && continuousMiner.mining) {
+        document.getElementById('mining-toggle').textContent = 'stop mining';
+    }
+
+    loadTotalMined();
+}
+
+async function loadTotalMined() {
+    if (!currentUser) return;
+    const response = await fetch(`/api/users/${currentUser.id}`);
+    const user = await response.json();
+    document.getElementById('total-mined').textContent = user.total_pow || 0;
+}
+
+async function toggleContinuousMining() {
+    const btn = document.getElementById('mining-toggle');
+
+    if (continuousMiner && continuousMiner.mining) {
+        continuousMiner.stopMining();
+        continuousMiner = null;
+        btn.textContent = 'start mining';
+        document.getElementById('submit-hash').disabled = true;
+    } else {
+        btn.textContent = 'stop mining';
+        continuousMiner = new ProofOfWorkMiner();
+        await continuousMiner.getChallenge();
+
+        continuousMiner.mine(999999999, (hash, nonce, points, attempts) => {
+            document.getElementById('current-hash').textContent = hash.substring(0, 32) + '...';
+            document.getElementById('current-points').textContent = `${points} POW`;
+            document.getElementById('mining-attempts').textContent = attempts;
+
+            const sessionBest = document.getElementById('session-best');
+            const currentBest = parseInt(sessionBest.textContent) || 0;
+            if (points > currentBest) {
+                sessionBest.textContent = points;
+            }
+
+            if (points >= 15) {
+                document.getElementById('submit-hash').disabled = false;
+            }
+
+            window.updateMiningStats(points, attempts);
+        });
+    }
+}
+
+async function submitMinedHash() {
+    if (!continuousMiner || !continuousMiner.bestHash) {
+        alert('no hash to submit');
+        return;
+    }
+
+    const response = await fetch('/api/pow/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+            challenge: continuousMiner.challenge,
+            nonce: continuousMiner.bestNonce
+        })
+    });
+
+    if (response.ok) {
+        const result = await response.json();
+        alert(`submitted ${result.points} POW!` + (result.achievement_unlocked ? ` achievement unlocked!` : ''));
+
+        continuousMiner.bestHash = null;
+        continuousMiner.bestPoints = 0;
+        await continuousMiner.getChallenge();
+
+        document.getElementById('submit-hash').disabled = true;
+        loadTotalMined();
+    } else {
+        alert('failed to submit hash');
+    }
+}
+
+async function loadImages() {
+    const imagesView = document.getElementById('images-view');
+
+    const response = await fetch('/api/admin/files', { credentials: 'include' });
+
+    if (response.ok) {
+        const files = await response.json();
+
+        imagesView.innerHTML = `
+            <div class="card">
+                <h2>image library</h2>
+                ${currentUser && currentUser.is_admin ? '<button class="btn" onclick="showUploadForm()">upload</button>' : ''}
+            </div>
+
+            <div id="upload-form" style="display: none;" class="card">
+                <h3>upload image</h3>
+                <form onsubmit="uploadImage(event)">
+                    <input type="file" id="image-file" accept="image/*" required style="margin-bottom: 10px;">
+                    <textarea id="image-prompt" class="input-field" placeholder="prompt for claude (optional)" style="min-height: 60px; margin-bottom: 10px;"></textarea>
+                    <button type="submit" class="btn">upload</button>
+                    <button type="button" class="btn" onclick="hideUploadForm()">cancel</button>
+                </form>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                ${files.map(f => `
+                    <div class="card" style="padding: 10px;">
+                        <img src="${f.path}" style="width: 100%; height: auto; border: 1px solid var(--border-color);">
+                        <div style="font-size: 12px; margin-top: 5px;">${f.filename}</div>
+                        ${f.prompt ? `<div style="font-size: 11px; color: var(--text-secondary); margin-top: 5px;">${f.prompt}</div>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else {
+        imagesView.innerHTML = `
+            <div class="card">
+                <h2>image library</h2>
+                <p>admin access required</p>
+            </div>
+        `;
+    }
+}
+
+function showUploadForm() {
+    document.getElementById('upload-form').style.display = 'block';
+}
+
+function hideUploadForm() {
+    document.getElementById('upload-form').style.display = 'none';
+}
+
+async function uploadImage(event) {
+    event.preventDefault();
+
+    const fileInput = document.getElementById('image-file');
+    const prompt = document.getElementById('image-prompt').value;
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    if (prompt) formData.append('prompt', prompt);
+
+    const response = await fetch('/api/admin/files', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+    });
+
+    if (response.ok) {
+        hideUploadForm();
+        loadImages();
+    } else {
+        alert('upload failed');
+    }
 }
 
 window.updateMiningStats = function(points, attempts) {

@@ -13,6 +13,7 @@ function hideAllViews() {
     document.getElementById('thread-list').style.display = 'none';
     document.getElementById('thread-view').style.display = 'none';
     document.getElementById('profile-view').style.display = 'none';
+    document.getElementById('blogs-view').style.display = 'none';
     document.getElementById('chat-view').style.display = 'none';
     document.getElementById('mining-view').style.display = 'none';
     document.getElementById('images-view').style.display = 'none';
@@ -42,6 +43,13 @@ async function showBoards() {
     `;
 
     document.getElementById('updates-box').style.display = 'none';
+}
+
+function showBlogs() {
+    hideAllViews();
+    document.getElementById('updates-box').style.display = 'none';
+    document.getElementById('blogs-view').style.display = 'block';
+    loadBlogs();
 }
 
 function showChat() {
@@ -664,6 +672,72 @@ window.updateMiningStats = function(points, attempts) {
         statsEl.textContent = `${points} POW | ${attempts} attempts`;
     }
 };
+
+async function loadBlogs() {
+    const blogsView = document.getElementById('blogs-view');
+
+    blogsView.innerHTML = `
+        <div class="card">
+            <h2>public blogs</h2>
+            <p>user blogs and posts from across haichan</p>
+        </div>
+        <div id="blogs-list"></div>
+    `;
+
+    try {
+        const usersResponse = await fetch('/api/pow/leaderboard');
+        const users = await usersResponse.json();
+
+        let allBlogPosts = [];
+
+        for (const user of users.slice(0, 20)) {
+            try {
+                const blogResponse = await fetch(`/api/users/${user.id}/blog`);
+                if (blogResponse.ok) {
+                    const posts = await blogResponse.json();
+                    posts.forEach(post => {
+                        post.user = user;
+                    });
+                    allBlogPosts = allBlogPosts.concat(posts);
+                }
+            } catch (e) {
+                console.log(`Failed to load blog for user ${user.id}`);
+            }
+        }
+
+        allBlogPosts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        const blogsList = document.getElementById('blogs-list');
+        if (allBlogPosts.length > 0) {
+            blogsList.innerHTML = allBlogPosts.map(post => `
+                <div class="card" style="margin-bottom: 15px;">
+                    <h3 style="margin-bottom: 5px;">${post.title}</h3>
+                    <div style="font-size: 11px; margin-bottom: 10px;">
+                        by <strong onclick="showProfile(${post.user.id})" style="cursor: pointer;">
+                            ${post.user.display_name || post.user.pubkey.substring(0, 8)}
+                        </strong>
+                        | <span class="pow-indicator">${post.pow_points || 0} POW</span>
+                        | ${new Date(post.created_at).toLocaleString()}
+                    </div>
+                    <div style="white-space: pre-wrap;">${post.body}</div>
+                </div>
+            `).join('');
+        } else {
+            blogsList.innerHTML = `
+                <div class="card">
+                    <p>no blog posts yet</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Failed to load blogs:', error);
+        document.getElementById('blogs-list').innerHTML = `
+            <div class="card">
+                <p>failed to load blogs</p>
+            </div>
+        `;
+    }
+}
 
 window.addEventListener('load', () => {
     document.documentElement.setAttribute('data-theme', 'light');

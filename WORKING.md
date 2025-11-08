@@ -22,6 +22,14 @@
 - `/welcome.html` - post-registration welcome
 - `/` (index.html) - main haichan app with updates box
 
+## site updates box
+
+the updates box on the home page is used to track:
+- new features and functionality
+- new links and pages
+- announcements
+- site changes
+
 ## boards
 
 - `/gen/` - general discussion

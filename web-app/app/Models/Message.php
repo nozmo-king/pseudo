@@ -10,6 +10,7 @@ class Message extends Model
         'user_id',
         'chatroom_id',
         'body',
+        'anonymous_name',
     ];
 
     public function user()

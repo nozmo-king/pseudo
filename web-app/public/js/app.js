@@ -362,11 +362,21 @@ async function loadChat() {
         </div>
         <div id="chat-messages" class="card" style="min-height: 400px; max-height: 500px; overflow-y: auto;"></div>
         <div class="card">
-            <input type="text" id="chat-input" class="input-field" placeholder="type message or /command">
+            <input type="text" id="chat-input" class="input-field" placeholder="type message" onkeypress="if(event.key==='Enter')sendMessage()">
             <button class="btn" onclick="sendMessage()" style="margin-top: 10px;">send</button>
         </div>
     `;
     loadMessages();
+
+    // Auto-refresh messages every 2 seconds
+    if (window.chatInterval) clearInterval(window.chatInterval);
+    window.chatInterval = setInterval(() => {
+        if (document.getElementById('chat-view').style.display === 'block') {
+            loadMessages();
+        } else {
+            clearInterval(window.chatInterval);
+        }
+    }, 2000);
 }
 
 async function loadMessages() {
@@ -374,11 +384,24 @@ async function loadMessages() {
     const messages = await response.json();
 
     const container = document.getElementById('chat-messages');
-    container.innerHTML = messages.map(m => `
-        <div class="chat-message">
-            <strong>${m.user.display_name || m.user.pubkey.substring(0, 8)}</strong>: ${m.body}
-        </div>
-    `).join('');
+    container.innerHTML = messages.map(m => {
+        let displayName;
+        if (m.anonymous_name) {
+            displayName = m.anonymous_name;
+        } else if (m.user) {
+            displayName = m.user.display_name || m.user.pubkey.substring(0, 8);
+        } else {
+            displayName = '🍕';
+        }
+        return `
+            <div class="chat-message">
+                <strong>${displayName}</strong>: ${m.body}
+            </div>
+        `;
+    }).join('');
+
+    // Auto-scroll to bottom
+    container.scrollTop = container.scrollHeight;
 }
 
 async function sendMessage() {

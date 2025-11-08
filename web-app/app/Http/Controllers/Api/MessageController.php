@@ -48,10 +48,21 @@ class MessageController extends Controller
             return response()->json($result);
         }
 
+        $userId = auth()->id();
+
+        // Generate random food emoji name for anonymous users
+        if (!$userId) {
+            if (!session()->has('anon_name')) {
+                $foodEmojis = ['🍕', '🍔', '🍟', '🌭', '🍿', '🧂', '🥓', '🥚', '🍳', '🧇', '🥞', '🧈', '🍞', '🥐', '🥨', '🥯', '🥖', '🫓', '🥪', '🌮', '🌯', '🫔', '🥙', '🧆', '🥚', '🍖', '🍗', '🥩', '🍠', '🥟', '🥠', '🥡', '🍱', '🍘', '🍙', '🍚', '🍛', '🍜', '🍝', '🍢', '🍣', '🍤', '🍥', '🥮', '🍡', '🥘', '🍲', '🫕', '🍵', '🥣', '🥗', '🍿', '🧈', '🧇', '🥞', '🧆', '🫓', '🥙', '🌮', '🌯', '🫔', '🥪', '🥨', '🥯', '🥖', '🍞', '🥐', '🧀', '🥚', '🍳', '🧈', '🥞', '🧇', '🥓', '🍔', '🍟', '🌭', '🍕', '🥪'];
+                session(['anon_name' => $foodEmojis[array_rand($foodEmojis)]]);
+            }
+        }
+
         $message = Message::create([
-            'user_id' => auth()->id(),
+            'user_id' => $userId,
             'chatroom_id' => $request->input('chatroom_id'),
             'body' => $body,
+            'anonymous_name' => !$userId ? session('anon_name') : null,
         ]);
 
         $message->load('user');

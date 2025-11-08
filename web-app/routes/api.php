@@ -36,13 +36,13 @@ Route::get('/chatrooms', [ChatroomController::class, 'index']);
 Route::get('/users/{user}', [UserController::class, 'show']);
 Route::get('/users/{user}/blog', [BlogPostController::class, 'index']);
 
+Route::get('/messages', [MessageController::class, 'index']);
+Route::post('/messages', [MessageController::class, 'store']);
+
 Route::middleware('auth')->group(function () {
     Route::post('/threads', [ThreadController::class, 'store']);
     Route::get('/threads/{thread}/posts', [PostController::class, 'index']);
     Route::post('/threads/{thread}/posts', [PostController::class, 'store']);
-
-    Route::get('/messages', [MessageController::class, 'index']);
-    Route::post('/messages', [MessageController::class, 'store']);
 
     Route::post('/chatrooms', [ChatroomController::class, 'store']);
 

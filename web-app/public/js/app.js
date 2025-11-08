@@ -421,14 +421,22 @@ function updateUserList(messages) {
 
     const now = new Date();
     const userActivity = {};
+    const userTypes = {}; // Track user type (admin, talky, regular)
 
     // Track last activity for each user
     messages.forEach(m => {
         let displayName;
-        if (m.anonymous_name) {
+        let isAdmin = false;
+        let isTalky = false;
+
+        if (m.anonymous_name === 'talky') {
+            displayName = 'talky';
+            isTalky = true;
+        } else if (m.anonymous_name) {
             displayName = m.anonymous_name;
         } else if (m.user) {
             displayName = m.user.display_name || m.user.pubkey.substring(0, 8);
+            isAdmin = m.user.is_admin;
         } else {
             displayName = '🍕';
         }
@@ -436,6 +444,7 @@ function updateUserList(messages) {
         const messageTime = new Date(m.created_at);
         if (!userActivity[displayName] || messageTime > userActivity[displayName]) {
             userActivity[displayName] = messageTime;
+            userTypes[displayName] = { isAdmin, isTalky };
         }
     });
 
@@ -445,9 +454,15 @@ function updateUserList(messages) {
         .map(([name, lastActivity]) => {
             const minutesAgo = (now - lastActivity) / 1000 / 60;
             const isIdle = minutesAgo > 30;
-            const style = isIdle ? 'color: #666666;' : '';
+            const { isAdmin, isTalky } = userTypes[name] || {};
+
+            let style = isIdle ? 'color: #666666;' : '';
+            if (isAdmin) style += ' font-weight: bold;';
+
             const idleText = isIdle ? ' (idle)' : '';
-            return `<div style="${style} font-size: 9px; margin: 0; padding: 0; line-height: 1.1;">${name}${idleText}</div>`;
+            const suffix = isTalky ? '+' : '';
+
+            return `<div style="${style} font-size: 9px; margin: 0; padding: 0; line-height: 1.1;">${name}${suffix}${idleText}</div>`;
         })
         .join('');
 

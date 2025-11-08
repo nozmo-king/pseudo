@@ -97,3 +97,4 @@ commands return `{type: 'system', message: '...'}` instead of creating message r
 - routes in `routes/api.php` with middleware groups
 - migrations timestamped, never edit existing migrations
 - css in `public/assets/pseudochan.css` (black/white/grey theme, 3d shadows, grain overlay)
+- no claude code references or authorship ever

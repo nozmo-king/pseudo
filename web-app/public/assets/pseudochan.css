@@ -386,3 +386,70 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 1.4;
     white-space: pre-wrap;
 }
+
+.top-toolbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: var(--shadow-md);
+    z-index: 100;
+}
+
+.toolbar-links {
+    display: flex;
+    gap: 20px;
+}
+
+.toolbar-links a {
+    cursor: pointer;
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    transition: all 0.2s;
+}
+
+.toolbar-links a:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
+
+.bottom-toolbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: var(--shadow-md);
+    z-index: 100;
+    font-size: 14px;
+}
+
+.bottom-toolbar #user-info {
+    font-weight: bold;
+}
+
+.bottom-toolbar #mining-stats {
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--text-secondary);
+}
+
+.container {
+    margin-top: 80px;
+    margin-bottom: 70px;
+    padding-bottom: 20px;
+}

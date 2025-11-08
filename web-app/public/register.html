@@ -101,8 +101,12 @@
 
     <script>
         let registrationData = {};
-        const EC = elliptic.ec;
-        const ec = new EC('secp256k1');
+        let ec;
+
+        window.addEventListener('load', function() {
+            const EC = elliptic.ec;
+            ec = new EC('secp256k1');
+        });
 
         async function validateFriendCode() {
             const code = document.getElementById('friendCode').value.trim();
@@ -113,18 +117,10 @@
 
             document.getElementById('codeStatus').textContent = 'verifying...';
 
-            const response = await fetch('/api/admin/invites');
-            const invites = await response.json();
-
-            const validInvite = invites.find(inv => inv.code === code && !inv.used_at);
-
-            if (validInvite) {
-                registrationData.inviteCode = code;
-                document.getElementById('step1').classList.add('hidden');
-                document.getElementById('step2').classList.remove('hidden');
-            } else {
-                document.getElementById('codeStatus').textContent = 'invalid or used friend code';
-            }
+            // Just save the code, backend will validate it during registration
+            registrationData.inviteCode = code;
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
         }
 
         async function startMining() {

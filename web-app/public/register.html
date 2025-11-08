@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>register - haichan</title>
+    <script src="https://cdn.jsdelivr.net/npm/elliptic@6.5.4/dist/elliptic.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background: #ffffff;
+            color: #000000;
+            font-size: 12px;
+            margin: 20px;
+            line-height: 1.4;
+        }
+        h1 { font-size: 18px; font-weight: bold; margin: 10px 0; }
+        h2 { font-size: 14px; font-weight: bold; margin: 10px 0; }
+        input, textarea {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12px;
+            padding: 2px;
+            border: 1px solid #000000;
+            width: 300px;
+        }
+        button {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11px;
+            padding: 2px 6px;
+            border: 1px solid #000000;
+            background: #f5f5f5;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #cccccc;
+        }
+        .box {
+            border: 1px solid #000000;
+            padding: 10px;
+            margin: 20px 0;
+            max-width: 600px;
+        }
+        .status {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            color: #666666;
+            margin: 10px 0;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>register - haichan</h1>
+    <p><a href="/landing.html">&larr; back</a></p>
+
+    <div id="step1" class="box">
+        <h2>step 1: friend code</h2>
+        <p>enter your friend code to proceed</p>
+        <input type="text" id="friendCode" placeholder="friend code">
+        <br><br>
+        <button onclick="validateFriendCode()">verify</button>
+        <div id="codeStatus" class="status"></div>
+    </div>
+
+    <div id="step2" class="box hidden">
+        <h2>step 2: account details</h2>
+        <p>choose a username and password</p>
+        <label>username:</label><br>
+        <input type="text" id="username" placeholder="username"><br><br>
+        <label>password:</label><br>
+        <input type="password" id="password" placeholder="password"><br><br>
+        <label>ssh public key (optional):</label><br>
+        <textarea id="sshKey" rows="3" placeholder="ssh-rsa AAAA..."></textarea><br><br>
+        <button onclick="startMining()">create account</button>
+    </div>
+
+    <div id="step3" class="box hidden">
+        <h2>step 3: mining your bitcoin address</h2>
+        <p>please wait while we generate your unique bitcoin address starting with <b>21e8</b></p>
+        <div class="status">
+            <div>status: <span id="miningStatus">initializing...</span></div>
+            <div>attempts: <span id="miningAttempts">0</span></div>
+            <div>current address: <span id="currentAddress">-</span></div>
+        </div>
+    </div>
+
+    <div id="step4" class="box hidden">
+        <h2>registration complete!</h2>
+        <p>your bitcoin credentials have been generated:</p>
+        <div class="status">
+            <div><b>bitcoin address:</b> <span id="finalAddress"></span></div>
+            <div><b>private key:</b> <span id="finalPrivkey" style="word-break: break-all;"></span></div>
+        </div>
+        <p><b style="color: #ff0000;">IMPORTANT:</b> download and save your credentials. your bitcoin private key is your master recovery key.</p>
+        <button onclick="downloadCredentials()">download credentials</button>
+        <br><br>
+        <p>after downloading, <a href="/welcome.html">proceed to haichan &rarr;</a></p>
+    </div>
+
+    <script>
+        let registrationData = {};
+        const EC = elliptic.ec;
+        const ec = new EC('secp256k1');
+
+        async function validateFriendCode() {
+            const code = document.getElementById('friendCode').value.trim();
+            if (!code) {
+                document.getElementById('codeStatus').textContent = 'please enter a friend code';
+                return;
+            }
+
+            document.getElementById('codeStatus').textContent = 'verifying...';
+
+            const response = await fetch('/api/admin/invites');
+            const invites = await response.json();
+
+            const validInvite = invites.find(inv => inv.code === code && !inv.used_at);
+
+            if (validInvite) {
+                registrationData.inviteCode = code;
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+            } else {
+                document.getElementById('codeStatus').textContent = 'invalid or used friend code';
+            }
+        }
+
+        async function startMining() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const sshKey = document.getElementById('ssh Key').value.trim();
+
+            if (!username || !password) {
+                alert('username and password required');
+                return;
+            }
+
+            registrationData.username = username;
+            registrationData.password = password;
+            registrationData.sshKey = sshKey;
+
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+
+            mineBitcoinAddress();
+        }
+
+        function mineBitcoinAddress() {
+            document.getElementById('miningStatus').textContent = 'mining...';
+            let attempts = 0;
+
+            const mineLoop = () => {
+                for (let i = 0; i < 1000; i++) {
+                    attempts++;
+
+                    const keyPair = ec.genKeyPair();
+                    const privKey = keyPair.getPrivate('hex');
+                    const pubKey = keyPair.getPublic('hex');
+
+                    const address = pubkeyToBitcoinAddress(pubKey);
+
+                    document.getElementById('miningAttempts').textContent = attempts;
+
+                    if (attempts % 100 === 0) {
+                        document.getElementById('currentAddress').textContent = address;
+                    }
+
+                    if (address.startsWith('21e8')) {
+                        registrationData.bitcoinAddress = address;
+                        registrationData.bitcoinPrivkey = privKey;
+                        registrationData.pubkey = pubKey;
+
+                        document.getElementById('miningStatus').textContent = 'found!';
+                        document.getElementById('currentAddress').textContent = address;
+                        completeRegistration();
+                        return;
+                    }
+                }
+
+                setTimeout(mineLoop, 0);
+            };
+
+            mineLoop();
+        }
+
+        function pubkeyToBitcoinAddress(pubkey) {
+            const pubkeyBin = hexToBytes(pubkey);
+            const sha256Hash = CryptoJS.SHA256(CryptoJS.lib.WordArray.create(pubkeyBin));
+            const ripemd160Hash = CryptoJS.RIPEMD160(sha256Hash);
+
+            const versionedPayload = CryptoJS.lib.WordArray.create([0x00]).concat(ripemd160Hash);
+            const checksum = CryptoJS.SHA256(CryptoJS.SHA256(versionedPayload)).words.slice(0, 1);
+            const address = versionedPayload.clone().concat(CryptoJS.lib.WordArray.create(checksum));
+
+            return base58Encode(wordArrayToBytes(address));
+        }
+
+        function hexToBytes(hex) {
+            const bytes = [];
+            for (let i = 0; i < hex.length; i += 2) {
+                bytes.push(parseInt(hex.substr(i, 2), 16));
+            }
+            return bytes;
+        }
+
+        function wordArrayToBytes(wordArray) {
+            const words = wordArray.words;
+            const sigBytes = wordArray.sigBytes;
+            const bytes = [];
+            for (let i = 0; i < sigBytes; i++) {
+                bytes.push((words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff);
+            }
+            return bytes;
+        }
+
+        function base58Encode(bytes) {
+            const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+            let num = BigInt('0x' + bytes.map(b => b.toString(16).padStart(2, '0')).join(''));
+            let encoded = '';
+
+            while (num > 0n) {
+                encoded = ALPHABET[Number(num % 58n)] + encoded;
+                num = num / 58n;
+            }
+
+            for (let i = 0; i < bytes.length && bytes[i] === 0; i++) {
+                encoded = '1' + encoded;
+            }
+
+            return encoded;
+        }
+
+        async function completeRegistration() {
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step4').classList.remove('hidden');
+            document.getElementById('finalAddress').textContent = registrationData.bitcoinAddress;
+            document.getElementById('finalPrivkey').textContent = registrationData.bitcoinPrivkey;
+
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    invite_code: registrationData.inviteCode,
+                    username: registrationData.username,
+                    password: registrationData.password,
+                    bitcoin_address: registrationData.bitcoinAddress,
+                    bitcoin_privkey: registrationData.bitcoinPrivkey,
+                    pubkey: registrationData.pubkey,
+                    ssh_key: registrationData.sshKey
+                })
+            });
+
+            if (!response.ok) {
+                alert('registration failed - please try again');
+            }
+        }
+
+        function downloadCredentials() {
+            const credentials = `HAICHAN ACCOUNT CREDENTIALS
+================================================
+
+USERNAME: ${registrationData.username}
+PASSWORD: ${registrationData.password}
+
+BITCOIN ADDRESS: ${registrationData.bitcoinAddress}
+BITCOIN PRIVATE KEY: ${registrationData.bitcoinPrivkey}
+
+SSH KEY: ${registrationData.sshKey || 'none'}
+
+================================================
+KEEP THIS FILE SAFE AND SECURE
+YOUR BITCOIN PRIVATE KEY IS YOUR MASTER RECOVERY KEY
+================================================
+`;
+
+            const blob = new Blob([credentials], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `haichan-${registrationData.username}-credentials.txt`;
+            a.click();
+        }
+    </script>
+</body>
+</html>

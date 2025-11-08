@@ -642,7 +642,6 @@ window.updateMiningStats = function(points, attempts) {
 };
 
 window.addEventListener('load', () => {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    document.documentElement.setAttribute('data-theme', 'light');
     checkAuth();
 });

@@ -114,4 +114,56 @@ class PseudoKeyAuthController extends Controller
 
         return $encoded;
     }
+
+    public function register(Request $request)
+    {
+        $request->validate([
+            'invite_code' => 'required|string',
+            'username' => 'required|string|unique:users|max:255',
+            'password' => 'required|string|min:6',
+            'bitcoin_address' => 'required|string',
+            'bitcoin_privkey' => 'required|string',
+            'pubkey' => 'required|string',
+        ]);
+
+        $inviteCode = \App\Models\InviteCode::where('code', $request->input('invite_code'))
+            ->whereNull('used_at')
+            ->first();
+
+        if (!$inviteCode) {
+            return response()->json(['error' => 'Invalid or used invite code'], 400);
+        }
+
+        $user = User::create([
+            'username' => $request->input('username'),
+            'password' => bcrypt($request->input('password')),
+            'bitcoin_address' => $request->input('bitcoin_address'),
+            'bitcoin_privkey' => encrypt($request->input('bitcoin_privkey')),
+            'pubkey' => $request->input('pubkey'),
+            'invite_code' => $request->input('invite_code'),
+        ]);
+
+        $inviteCode->update([
+            'used_by_user_id' => $user->id,
+            'used_at' => now(),
+        ]);
+
+        Auth::login($user);
+
+        return response()->json(['success' => true, 'user' => $user]);
+    }
+
+    public function login(Request $request)
+    {
+        $request->validate([
+            'username' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        if (Auth::attempt(['username' => $request->input('username'), 'password' => $request->input('password')])) {
+            return response()->json(['success' => true, 'user' => Auth::user()]);
+        }
+
+        return response()->json(['error' => 'Invalid credentials'], 401);
+    }
 }

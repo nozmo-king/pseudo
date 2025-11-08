@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>login - haichan</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background: #ffffff;
+            color: #000000;
+            font-size: 12px;
+            margin: 20px;
+            line-height: 1.4;
+        }
+        h1 { font-size: 18px; font-weight: bold; margin: 10px 0; }
+        input {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12px;
+            padding: 2px;
+            border: 1px solid #000000;
+            width: 300px;
+        }
+        button {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11px;
+            padding: 2px 6px;
+            border: 1px solid #000000;
+            background: #f5f5f5;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #cccccc;
+        }
+        .box {
+            border: 1px solid #000000;
+            padding: 10px;
+            margin: 20px 0;
+            max-width: 600px;
+        }
+        .status {
+            color: #ff0000;
+            margin: 10px 0;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <h1>login - haichan</h1>
+    <p><a href="/landing.html">&larr; back</a></p>
+
+    <div class="box">
+        <label>username:</label><br>
+        <input type="text" id="username" placeholder="username"><br><br>
+        <label>password:</label><br>
+        <input type="password" id="password" placeholder="password"><br><br>
+        <button onclick="login()">login</button>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        async function login() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                document.getElementById('status').textContent = 'username and password required';
+                return;
+            }
+
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ username, password })
+            });
+
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                document.getElementById('status').textContent = 'invalid credentials';
+            }
+        }
+
+        document.getElementById('password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') login();
+        });
+    </script>
+</body>
+</html>

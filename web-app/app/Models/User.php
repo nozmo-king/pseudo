@@ -18,14 +18,21 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'username',
+        'password',
         'pubkey',
+        'bitcoin_address',
+        'bitcoin_privkey',
         'display_name',
         'avatar_path',
         'is_admin',
         'invite_code',
     ];
 
-    protected $hidden = [];
+    protected $hidden = [
+        'password',
+        'bitcoin_privkey',
+    ];
 
     protected function casts(): array
     {

@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/challenge', [PseudoKeyAuthController::class, 'challenge']);
 Route::post('/auth/verify', [PseudoKeyAuthController::class, 'verify']);
+Route::post('/auth/register', [PseudoKeyAuthController::class, 'register']);
+Route::post('/auth/login', [PseudoKeyAuthController::class, 'login']);
 
 Route::get('/pow/challenge', [ProofOfWorkController::class, 'challenge']);
 Route::post('/pow/submit', [ProofOfWorkController::class, 'submit']);

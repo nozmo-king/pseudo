@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Message;
+use App\Services\ChatCommandService;
 use Illuminate\Http\Request;
 
 class MessageController extends Controller
@@ -29,10 +31,27 @@ class MessageController extends Controller
             'body' => 'required|string|max:1000',
         ]);
 
+        $commandService = new ChatCommandService();
+        $body = $request->input('body');
+
+        if ($commandService->isCommand($body)) {
+            $result = $commandService->execute(
+                $body,
+                auth()->id(),
+                $request->input('chatroom_id')
+            );
+
+            if (isset($result['error'])) {
+                return response()->json(['error' => $result['error']], 400);
+            }
+
+            return response()->json($result);
+        }
+
         $message = Message::create([
             'user_id' => auth()->id(),
             'chatroom_id' => $request->input('chatroom_id'),
-            'body' => $request->input('body'),
+            'body' => $body,
         ]);
 
         $message->load('user');

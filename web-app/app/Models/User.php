@@ -21,6 +21,8 @@ class User extends Authenticatable
         'pubkey',
         'display_name',
         'avatar_path',
+        'is_admin',
+        'invite_code',
     ];
 
     protected $hidden = [];
@@ -38,5 +40,25 @@ class User extends Authenticatable
     public function posts()
     {
         return $this->hasMany(Post::class);
+    }
+
+    public function achievements()
+    {
+        return $this->hasMany(Achievement::class);
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
+    public function createdInvites()
+    {
+        return $this->hasMany(InviteCode::class, 'created_by_user_id');
+    }
+
+    public function blogPosts()
+    {
+        return $this->hasMany(BlogPost::class);
     }
 }

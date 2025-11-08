@@ -324,3 +324,65 @@ a {
 a:hover {
     border-bottom-color: var(--text-primary);
 }
+
+h1, h2, h3, h4, h5, h6 {
+    text-shadow:
+        -1px -1px 0 var(--bg-primary),
+         1px -1px 0 var(--bg-primary),
+        -1px  1px 0 var(--bg-primary),
+         1px  1px 0 var(--bg-primary);
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.outlined-text {
+    color: var(--bg-primary);
+    text-shadow:
+        -1px -1px 0 var(--text-primary),
+         1px -1px 0 var(--text-primary),
+        -1px  1px 0 var(--text-primary),
+         1px  1px 0 var(--text-primary);
+}
+
+.btn-outlined {
+    color: var(--bg-primary);
+    background: var(--text-primary);
+    text-shadow: none;
+}
+
+.crosshatch {
+    position: relative;
+}
+
+.crosshatch::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    background-image:
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 2px,
+            var(--border-color) 2px,
+            var(--border-color) 3px
+        ),
+        repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 2px,
+            var(--border-color) 2px,
+            var(--border-color) 3px
+        );
+    opacity: 0.05;
+}
+
+.chat-message {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+}

@@ -9,7 +9,13 @@ class Thread extends Model
     protected $fillable = [
         'title',
         'user_id',
+        'board_id',
     ];
+
+    public function board()
+    {
+        return $this->belongsTo(Board::class);
+    }
 
     public function user()
     {

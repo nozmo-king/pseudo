@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Achievement;
 use App\Models\ProofOfWork;
 use Illuminate\Support\Str;
 
@@ -24,21 +25,43 @@ class ProofOfWorkService
         $points = ProofOfWork::calculatePoints($hash);
 
         if ($points > 0) {
+            $difficulty = $this->calculateDifficulty($hash);
+
             $proof = ProofOfWork::create([
                 'user_id' => $userId,
                 'thread_id' => $threadId,
                 'challenge' => $challenge,
                 'nonce' => $nonce,
                 'hash' => $hash,
-                'difficulty' => $this->calculateDifficulty($hash),
+                'difficulty' => $difficulty,
                 'points' => $points,
             ]);
+
+            $achievementUnlocked = null;
+            if ($userId) {
+                $zeroCount = $this->countTrailingZeros($hash);
+                if ($zeroCount > 0 && $zeroCount <= 10) {
+                    $existing = Achievement::where('user_id', $userId)
+                        ->where('difficulty', $zeroCount)
+                        ->first();
+
+                    if (!$existing) {
+                        Achievement::create([
+                            'user_id' => $userId,
+                            'difficulty' => $zeroCount,
+                            'hash' => $hash,
+                        ]);
+                        $achievementUnlocked = $zeroCount;
+                    }
+                }
+            }
 
             return [
                 'valid' => true,
                 'hash' => $hash,
                 'points' => $points,
                 'proof_id' => $proof->id,
+                'achievement_unlocked' => $achievementUnlocked,
             ];
         }
 
@@ -67,5 +90,24 @@ class ProofOfWorkService
     public function getUserTotalPoints(int $userId): float
     {
         return ProofOfWork::where('user_id', $userId)->sum('points');
+    }
+
+    private function countTrailingZeros(string $hash): int
+    {
+        $prefix = '21e8';
+        if (!str_starts_with($hash, $prefix)) {
+            return 0;
+        }
+
+        $count = 0;
+        for ($i = strlen($prefix); $i < strlen($hash) && $i < strlen($prefix) + 10; $i++) {
+            if ($hash[$i] === '0') {
+                $count++;
+            } else {
+                break;
+            }
+        }
+
+        return $count;
     }
 }
